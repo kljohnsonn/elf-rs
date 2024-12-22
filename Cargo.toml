@@ -2,6 +2,10 @@
 name = "relf"
 version = "0.1.0"
 edition = "2021"
+authors = ["mintsuku moxxydev@gmail.com>"]
+description = "A rust implementation of readelf"
+license = "MIT"
+
 
 [dependencies]
 clap = "4.5.23"
