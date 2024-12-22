@@ -1,6 +1,5 @@
-use std::process::Command;
 
-use clap::{command, Command};
+use clap::Command;
 
 
 pub fn init_cli() -> Command {
