@@ -31,6 +31,49 @@ pub enum ProgramHeaderFlag {
 }
 
 #[derive(Debug)]
+pub enum SectionHeaderFlag {
+    Writable,
+    Alloc,
+    ExecInstr,
+    Merge,
+    Strings,
+    InfoLink,
+    LinkOrder,
+    OsNonConforming,
+    Group,
+    Tls,
+    MaskOs,
+    MaskProc,
+    Ordered,
+    Exclude,
+    Undefined,
+}
+
+#[derive(Debug)]
+enum SectionHeaderType {
+    Null,
+    ProgBits,
+    SymTab,
+    StrTab,
+    Rela,
+    Hash,
+    Dynamic,
+    Note,
+    NoBits,
+    Rel,
+    ShLib,
+    DynSym,
+    InitArray,
+    FiniArray,
+    PreInitArray,
+    Group,
+    SymTabShndx,
+    Num,
+    LoOs,
+    Undefined
+}
+
+#[derive(Debug)]
 pub enum ElfFileType {
     EtNone,
     EtRel,
@@ -44,17 +87,17 @@ pub enum ElfFileType {
 
 #[derive(Debug)]
 pub struct Elf64 {
-    header: Elf64Header,
-    program_headers: Vec<ProgramHeader64>,
-    section_headers: Vec<SectionHeader64>
+    pub header: Elf64Header,
+    pub program_headers: Vec<ProgramHeader64>,
+    pub section_headers: Vec<SectionHeader64>
 }
 
 #[derive(Debug)]
 pub struct SectionHeader64 {
     sh_name: u32,
     name: String,
-    sh_type: u32,
-    sh_flags: u64,
+    sh_type: SectionHeaderType,
+    sh_flag: SectionHeaderFlag,
     sh_addr: u64,
     sh_offset: u64,
     sh_size: u64,
@@ -69,8 +112,8 @@ impl SectionHeader64 {
         let mut reader = ByteReader::new(data);
         let sh_name = reader.read_u32()?;
         let name = String::new();
-        let sh_type = reader.read_u32()?;
-        let sh_flags = reader.read_u64()?;
+        let sh_type = SectionHeader64::read_type(reader.read_u32()?.into());
+        let sh_flag = SectionHeader64::read_flags(reader.read_u64()?.into()); 
         let sh_addr = reader.read_u64()?;
         let sh_offset = reader.read_u64()?;
         let sh_size = reader.read_u64()?;
@@ -83,7 +126,7 @@ impl SectionHeader64 {
             sh_name,
             name,
             sh_type,
-            sh_flags,
+            sh_flag,
             sh_addr,
             sh_offset,
             sh_size,
@@ -96,7 +139,50 @@ impl SectionHeader64 {
     }
 
 
-    pub fn read_flags(flags: u64) { todo!()} 
+    pub fn read_flags(flag: u64) -> SectionHeaderFlag {
+        match flag {
+            0x1 => SectionHeaderFlag::Writable,
+            0x2 => SectionHeaderFlag::Alloc,
+            0x4 => SectionHeaderFlag::ExecInstr,
+            0x10 => SectionHeaderFlag::Merge,
+            0x20 => SectionHeaderFlag::Strings,
+            0x40 => SectionHeaderFlag::InfoLink,
+            0x80 => SectionHeaderFlag::LinkOrder,
+            0x100 => SectionHeaderFlag::OsNonConforming,
+            0x200 => SectionHeaderFlag::Group,
+            0x400 => SectionHeaderFlag::Tls,
+            0x0FF00000 => SectionHeaderFlag::MaskOs,
+            0xF0000000 => SectionHeaderFlag::MaskProc,
+            0x4000000 => SectionHeaderFlag::Ordered,
+            0x8000000 => SectionHeaderFlag::Exclude,
+            _ => SectionHeaderFlag::Undefined,
+        }
+    }
+
+    pub fn read_type(data: u32) -> SectionHeaderType {
+        match data {
+            0x0 => SectionHeaderType::Null,
+            0x1 => SectionHeaderType::ProgBits,
+            0x2 => SectionHeaderType::SymTab,
+            0x3 => SectionHeaderType::StrTab,
+            0x4 => SectionHeaderType::Rela,
+            0x5 => SectionHeaderType::Hash,
+            0x6 => SectionHeaderType::Dynamic,
+            0x7 => SectionHeaderType::Note,
+            0x8 => SectionHeaderType::NoBits,
+            0x9 => SectionHeaderType::Rel,
+            0x0A => SectionHeaderType::ShLib,
+            0x0B => SectionHeaderType::DynSym,
+            0x0E => SectionHeaderType::InitArray,
+            0x0F => SectionHeaderType::FiniArray,
+            0x10 => SectionHeaderType::PreInitArray,
+            0x11 => SectionHeaderType::Group,
+            0x12 => SectionHeaderType::SymTabShndx,
+            0x13 => SectionHeaderType::Num,
+            0x60000000 => SectionHeaderType::LoOs,
+            _=> SectionHeaderType::Undefined
+        }
+    }
 }
 
 #
@@ -165,18 +251,16 @@ impl ProgramHeader64 {
     }
 
     pub fn read_type(data: u32) -> ProgramHeaderType {
-        let p_type: ProgramHeaderType = match data {
+        match data {
             0 => ProgramHeaderType::PtNull,
             1 => ProgramHeaderType::PtLoad,
             2 => ProgramHeaderType::PtDynamic,
             _ => ProgramHeaderType::Undefined,
-        };
-
-        p_type
+        }
     }
 
-    pub fn read_flag(data: u32) -> ProgramHeaderFlag {
-        let p_flag: ProgramHeaderFlag = match data {
+    pub fn read_flag(flag: u32) -> ProgramHeaderFlag {
+        match flag {
             1 => ProgramHeaderFlag::Pfx,
             2 => ProgramHeaderFlag::Pfw,
             3 => ProgramHeaderFlag::Pfwx,
@@ -185,9 +269,7 @@ impl ProgramHeader64 {
             6 => ProgramHeaderFlag::Pfrw,
             7 => ProgramHeaderFlag::Pfwx,
             _ => ProgramHeaderFlag::Undefined,
-        };
-
-        p_flag
+        }
     }
 }
 

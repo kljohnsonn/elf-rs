@@ -13,6 +13,7 @@ use std::{
 };
 
 mod elf;
+mod cli;
 mod reader;
 
 fn main() -> Result<(), ParserError> {
@@ -29,6 +30,7 @@ fn main() -> Result<(), ParserError> {
 
         2 => {
             let elf = Elf64::parse(&data)?;
+            println!("{:?}", elf.section_headers)
         }
 
         _ => {
@@ -36,8 +38,7 @@ fn main() -> Result<(), ParserError> {
                 "Expected class 1 or 2, found {class}"
             )))
         }
-    }
-
+    } 
     Ok(())
 }
 
