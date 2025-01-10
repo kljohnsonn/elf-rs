@@ -1,4 +1,6 @@
 use std::array;
+use std::ops::Index;
+use std::ops::IndexMut;
 use std::str::from_utf8;
 use std::task::Wake;
 use std::usize;
@@ -6,6 +8,13 @@ use std::usize;
 use crate::reader::ByteReader;
 use crate::Display;
 use crate::Error;
+
+
+pub enum ElfType {
+    Elf32,
+    Elf64,
+    Invalid,
+}
 
 pub struct Elf32 {}
 
@@ -50,7 +59,7 @@ pub enum SectionHeaderFlag {
 }
 
 #[derive(Debug)]
-enum SectionHeaderType {
+pub enum SectionHeaderType {
     Null,
     ProgBits,
     SymTab,
@@ -185,29 +194,28 @@ impl SectionHeader64 {
     }
 }
 
-#
-[derive(Debug)]
+#[derive(Debug)]
 pub struct Elf64Header {
-    magic: [u8; 4],
-    class: u8,
-    endianness: u8,
-    version: u8,
-    abi: u8,
-    abi_version: u8,
-    padding: [u8; 7],
-    e_type: ElfFileType,
-    machine: u16,
-    e_version: u32,
-    e_entry: u64,
-    e_phoff: u64,
-    e_shoff: u64,
-    e_flags: u32,
-    e_ehsize: u16,
-    e_phentsize: u16,
-    e_phnum: u16,
-    e_shentsize: u16,
-    e_shnum: u16,
-    e_shstrndx: u16,
+    pub magic: [u8; 4],
+    pub class: u8,
+    pub endianness: u8,
+    pub version: u8,
+    pub abi: u8,
+    pub abi_version: u8,
+    pub padding: [u8; 7],
+    pub e_type: ElfFileType,
+    pub machine: u16,
+    pub e_version: u32,
+    pub e_entry: u64,
+    pub e_phoff: u64,
+    pub e_shoff: u64,
+    pub e_flags: u32,
+    pub e_ehsize: u16,
+    pub e_phentsize: u16,
+    pub e_phnum: u16,
+    pub e_shentsize: u16,
+    pub e_shnum: u16,
+    pub e_shstrndx: u16,
 }
 
 #[derive(Debug)]
@@ -267,7 +275,7 @@ impl ProgramHeader64 {
             4 => ProgramHeaderFlag::Pfr,
             5 => ProgramHeaderFlag::Pfrx,
             6 => ProgramHeaderFlag::Pfrw,
-            7 => ProgramHeaderFlag::Pfwx,
+            7 => ProgramHeaderFlag::Pfrwx,
             _ => ProgramHeaderFlag::Undefined,
         }
     }
@@ -355,6 +363,22 @@ pub fn get_section_name(table: &[u8], index: usize) -> String {
     String::from_utf8_lossy(&name).into_owned()
 
 
+}
+
+pub fn check_class(reader: &mut ByteReader) -> ElfType {
+    reader.skip(4);
+
+    match reader.read_bytes(1).index(0) {
+        1 => {
+            ElfType::Elf32
+        }
+
+        2 => {
+            ElfType::Elf64
+        }
+
+        _=> ElfType::Invalid
+    }
 }
 
 

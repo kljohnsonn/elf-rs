@@ -1,22 +1,56 @@
+use clap::Parser;
+use elf::check_class;
 use elf::Elf64;
+use elf::ElfType;
 use elf::ParserError;
 use reader::ByteReader;
 use std::{
     error::Error,
-    fmt::{format, Display},
-    fs,
-    io::Read,
+    fmt::Display,
+    fs,    
     ops::Index,
-    str::from_utf8,
-    task::Wake,
-    u32, usize,
+ 
 };
 
 mod elf;
 mod cli;
 mod reader;
+mod display;
 
-fn main() -> Result<(), ParserError> {
+
+fn main() {
+    let cli = cli::ElfDump::parse();
+
+
+    if let Some(header) = cli.header {
+        if fs::exists(&header).expect("Can't check existence of file") {
+            let file = fs::read(&header).unwrap();
+            let mut reader = ByteReader::new(&file);
+
+            match check_class(&mut reader) {
+                ElfType::Elf32 => {
+                }
+
+                ElfType::Elf64 => {
+                    let elf = Elf64::parse(&file).unwrap();
+
+                    println!("{}", elf.header);   
+                }
+
+                ElfType::Invalid => {
+                    println!("Elf file may be corrupted")
+                }
+            }
+        } else {
+            println!("File does not exist")
+        }
+    }
+}
+
+
+
+
+fn temp() -> Result<(), ParserError> {
     let data = fs::read("t").unwrap();
 
     let mut reader = ByteReader::new(&data);
@@ -40,5 +74,6 @@ fn main() -> Result<(), ParserError> {
         }
     } 
     Ok(())
+
 }
 
